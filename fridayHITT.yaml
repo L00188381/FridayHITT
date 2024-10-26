@@ -1,53 +1,115 @@
 Description: AWS Cloudformation stack for FridayHITT
+Parameters:
+  ProjectName:
+    Description: Please enter an appropriate name to prefix tag names
+    Type: String
+
+  VpcCIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.192.0.0/16
+
+  PublicSubnetCIDR:
+    Description: Please enter the IP range for the public subnet
+    Type: String
+    Default: 10.192.10.0/24
+
+  PrivateSubnetCIDR:
+    Description: Please enter the IP range for the private subnet
+    Type: String
+    Default: 10.192.20.0/24
+
+  EC2InstanceAMI:
+    Description: Please enter the AMI ID for the EC2 instances
+    Type: String
+    Default: ami-00385a401487aefa4
+
+  EC2InstanceType:
+    Description: Please enter the instance type for the EC2 instances
+    Type: String
+    Default: t2.micro
+
+  AvailabilityZone:
+    Description: Please enter an availability zone to use
+    Type: String
+    Default: eu-west-1a
+
+  CostCodeTag:
+    Description: Please enter a cost code to assosiate to Resources
+    Type: String
+    Default: P1001
+  
 
 Resources:
   FridayHITTVPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: 10.192.0.0/16
+      CidrBlock: !Ref VpcCIDR
       Tags:
         - Key: Name
-          Value: "FridayHITT"
+          Value: !Sub ProjectName VPC
+        - Key: CostCode
+          Value: !Ref CostCodeTag
 
   PublicSubnet:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref FridayHITTVPC
-      CidrBlock: 10.192.10.0/24
-      AvailabilityZone: eu-west-1a
+      CidrBlock: !Ref PublicSubnetCIDR
+      AvailabilityZone: !Ref AvailabilityZone
       MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ProjectName PublicSubnet
+        - Key: CostCode
+          Value: !Ref CostCodeTag
 
   PrivateSubnet:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref FridayHITTVPC
-      AvailabilityZone: eu-west-1a
-      CidrBlock: 10.192.20.0/24
+      AvailabilityZone: !Ref AvailabilityZone
+      CidrBlock: !Ref PrivateSubnetCIDR
       MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ProjectName PrivateSubnet
+        - Key: CostCode
+          Value: !Ref CostCodeTag
 
   PublicInstance:
     Type: AWS::EC2::Instance
     Properties:
-      InstanceType: t2.micro
-      ImageId: ami-00385a401487aefa4
+      InstanceType: !Ref EC2InstanceType
+      ImageId: !Ref EC2InstanceAMI
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
           DeviceIndex: '0'
           SubnetId: !Ref PublicSubnet
           GroupSet:
             - !Ref PublicInstanceSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ProjectName PublicInstance
+        - Key: CostCode
+          Value: !Ref CostCodeTag
 
   PrivateInstance:
     Type: AWS::EC2::Instance
     Properties:
-      InstanceType: t2.micro
-      ImageId: ami-00385a401487aefa4
+      InstanceType: !Ref EC2InstanceType
+      ImageId: !Ref EC2InstanceAMI
       NetworkInterfaces:
         - AssociatePublicIpAddress: false
           DeviceIndex: '0'
           SubnetId: !Ref PrivateSubnet
           GroupSet:
             - !Ref PrivateInstanceSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ProjectName PrivateInstance
+        - Key: CostCode
+          Value: !Ref CostCodeTag
 
   PublicInstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -55,6 +117,12 @@ Resources:
       GroupDescription: This is the security group for the public EC2 Instance
       GroupName: PublicIntanceSG
       VpcId: !Ref FridayHITTVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ProjectName PublicInstanceSecurityGroup
+        - Key: CostCode
+          Value: !Ref CostCodeTag
+      
 
   PrivateInstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -62,8 +130,18 @@ Resources:
       GroupDescription: This is the security group for the private EC2 Instance
       GroupName: PrivateIntanceSG
       VpcId: !Ref FridayHITTVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ProjectName PrivateInstanceSecurityGroup
+        - Key: CostCode
+          Value: !Ref CostCodeTag
 
   RouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref FridayHITTVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ProjectName RouteTable
+        - Key: CostCode
+          Value: !Ref CostCodeTag
