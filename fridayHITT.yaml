@@ -1,0 +1,69 @@
+Description: AWS Cloudformation stack for FridayHITT
+
+Resources:
+  FridayHITTVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.192.0.0/16
+      Tags:
+        - Key: Name
+          Value: "FridayHITT"
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref FridayHITTVPC
+      CidrBlock: 10.192.10.0/24
+      AvailabilityZone: eu-west-1a
+      MapPublicIpOnLaunch: true
+
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref FridayHITTVPC
+      AvailabilityZone: eu-west-1a
+      CidrBlock: 10.192.20.0/24
+      MapPublicIpOnLaunch: true
+
+  PublicInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-00385a401487aefa4
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: '0'
+          SubnetId: !Ref PublicSubnet
+          GroupSet:
+            - !Ref PublicInstanceSecurityGroup
+
+  PrivateInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-00385a401487aefa4
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: false
+          DeviceIndex: '0'
+          SubnetId: !Ref PrivateSubnet
+          GroupSet:
+            - !Ref PrivateInstanceSecurityGroup
+
+  PublicInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: This is the security group for the public EC2 Instance
+      GroupName: PublicIntanceSG
+      VpcId: !Ref FridayHITTVPC
+
+  PrivateInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: This is the security group for the private EC2 Instance
+      GroupName: PrivateIntanceSG
+      VpcId: !Ref FridayHITTVPC
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref FridayHITTVPC
