@@ -6,28 +6,23 @@ Parameters:
 
   VpcCIDR:
     Description: Please enter the IP range (CIDR notation) for this VPC
-    Type: String
-    Default: 10.192.0.0/16
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /fridayHITT/VPCCIDR
 
   PublicSubnetCIDR:
     Description: Please enter the IP range for the public subnet
-    Type: String
-    Default: 10.192.10.0/24
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /fridayHITT/PublicSubnetCIDR
 
   PrivateSubnetCIDR:
     Description: Please enter the IP range for the private subnet
-    Type: String
-    Default: 10.192.20.0/24
-
-  EC2InstanceAMI:
-    Description: Please enter the AMI ID for the EC2 instances
-    Type: String
-    Default: ami-00385a401487aefa4
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /fridayHITT/PrivateSubnetCIDR
 
   EC2InstanceType:
     Description: Please enter the instance type for the EC2 instances
-    Type: String
-    Default: t2.micro
+    Type: AWS::SSM::Parameter::Value<List<String>>
+    Default: /fridayHITT/AllowedInstanceTypes
 
   AvailabilityZone:
     Description: Please enter an availability zone to use
@@ -36,8 +31,8 @@ Parameters:
 
   CostCodeTag:
     Description: Please enter a cost code to assosiate to Resources
-    Type: String
-    Default: P1001
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /fridayHITT/CostCode
   
 
 Resources:
@@ -80,8 +75,8 @@ Resources:
   PublicInstance:
     Type: AWS::EC2::Instance
     Properties:
-      InstanceType: !Ref EC2InstanceType
-      ImageId: !Ref EC2InstanceAMI
+      InstanceType: !Select [0, !Ref EC2InstanceType]
+      ImageId: "{{resolve:ssm:/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id}}"
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
           DeviceIndex: '0'
@@ -97,8 +92,8 @@ Resources:
   PrivateInstance:
     Type: AWS::EC2::Instance
     Properties:
-      InstanceType: !Ref EC2InstanceType
-      ImageId: !Ref EC2InstanceAMI
+      InstanceType: !Select [0, !Ref EC2InstanceType]
+      ImageId: "{{resolve:ssm:/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id}}"
       NetworkInterfaces:
         - AssociatePublicIpAddress: false
           DeviceIndex: '0'
@@ -145,6 +140,11 @@ Resources:
         FromPort: 80
         ToPort: 80
         SourceSecurityGroupId: !Ref PublicInstanceSecurityGroup
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        DestinationSecurityGroupId: !Ref PublicInstanceSecurityGroup
 
   RouteTable:
     Type: AWS::EC2::RouteTable
