@@ -197,7 +197,7 @@ Resources:
       - IpProtocol: tcp
         FromPort: 22
         ToPort: 22
-        CidrIp: 84.203.14.253/32
+        CidrIp: !Ref JumpBoxInstanceSecurityGroup
 
   RouteTable:
     Type: AWS::EC2::RouteTable
