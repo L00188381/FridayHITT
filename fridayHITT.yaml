@@ -33,7 +33,17 @@ Parameters:
     Description: Please enter a cost code to assosiate to Resources
     Type: AWS::SSM::Parameter::Value<String>
     Default: /fridayHITT/CostCode
-  
+
+  JumpBoxInstanceType:
+    Description: Please enter the instance type for the EC2 instances
+    Type: AWS::SSM::Parameter::Value<List<String>>
+    Default: /fridayHITT/AllowedInstanceTypes
+
+  JumpBoxAllowedSSHFromIP:
+    Description: Please enter CIDR of the IP address or range that is allowed to SSH into the jump JumpBoxAllowedSSHFromIP
+    Type: String
+    Default: 84.203.14.253/32
+
 
 Resources:
   FridayHITTVPC:
@@ -106,6 +116,23 @@ Resources:
         - Key: CostCode
           Value: !Ref CostCodeTag
 
+  JumpBoxInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Select [0, !Ref EC2InstanceType]
+      ImageId: "{{resolve:ssm:/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id}}"
+      NetworkInterfaces:
+      - AssociatePublicIpAddress: true
+        DeviceIndex: '0'
+        SubnetId: !Ref PublicSubnet
+        GroupSet:
+          - !Ref JumpBoxInstanceSecurityGroup
+      Tags:
+      - Key: Name
+        Value: !Sub ProjectName JumpBoxInstance
+      - Key: CostCode
+        Value: !Ref CostCodeTag
+
   PublicInstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -122,6 +149,10 @@ Resources:
         FromPort: 80
         ToPort: 80
         CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        SourceSecurityGroupId: !Ref JumpBoxInstanceSecurityGroup
       
 
   PrivateInstanceSecurityGroup:
@@ -140,11 +171,33 @@ Resources:
         FromPort: 80
         ToPort: 80
         SourceSecurityGroupId: !Ref PublicInstanceSecurityGroup
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        SourceSecurityGroupId: !Ref JumpBoxInstanceSecurityGroup
       SecurityGroupEgress:
       - IpProtocol: tcp
         FromPort: 80
         ToPort: 80
         DestinationSecurityGroupId: !Ref PublicInstanceSecurityGroup
+      
+
+  JumpBoxInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: This is the security group for the jump box EC2 Instance
+      GroupName: JumpBoxIntanceSG
+      VpcId: !Ref FridayHITTVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ProjectName JumpBoxInstanceSecurityGroup
+        - Key: CostCode
+          Value: !Ref CostCodeTag
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 84.203.14.253/32
 
   RouteTable:
     Type: AWS::EC2::RouteTable
