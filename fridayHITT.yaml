@@ -44,6 +44,12 @@ Parameters:
     Type: String
     Default: 84.203.14.253/32
 
+  ApplicationSpecificPort:
+    Description: Port numbers for the application to use 8180-8190
+    Type: Number
+    MinValue: 8180
+    MaxValue: 8190
+    Default: 8181
 
 Resources:
   FridayHITTVPC:
@@ -168,8 +174,8 @@ Resources:
           Value: !Ref CostCodeTag
       SecurityGroupIngress:
       - IpProtocol: tcp
-        FromPort: 80
-        ToPort: 80
+        FromPort: !Ref ApplicationSpecificPort
+        ToPort: !Ref ApplicationSpecificPort
         SourceSecurityGroupId: !Ref PublicInstanceSecurityGroup
       - IpProtocol: tcp
         FromPort: 22
@@ -197,7 +203,7 @@ Resources:
       - IpProtocol: tcp
         FromPort: 22
         ToPort: 22
-        CidrIp: !Ref JumpBoxInstanceSecurityGroup
+        CidrIp: !Ref JumpBoxAllowedSSHFromIP
 
   RouteTable:
     Type: AWS::EC2::RouteTable
